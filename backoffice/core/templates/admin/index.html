@@ -1,0 +1,23 @@
+{% extends "admin/index.html" %}
+
+{% block content %}
+<style>
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 26px; }
+  .kpi { border: 1px solid var(--hairline-color, #ddd); border-left-width: 6px; border-radius: 6px; padding: 12px 14px; background: var(--body-bg, #fff); }
+  .kpi .label { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--body-quiet-color, #666); }
+  .kpi .value { font-size: 26px; font-weight: 700; margin: 4px 0; }
+  .kpi .hint { font-size: 12px; color: var(--body-quiet-color, #666); }
+  .kpi.ok { border-left-color: #1a9e57; } .kpi.info { border-left-color: #2f6fd1; }
+  .kpi.warn { border-left-color: #e0a000; } .kpi.bad { border-left-color: #d1352f; }
+</style>
+<div class="kpis">
+  {% for k in kpis %}
+    <div class="kpi {{ k.level }}">
+      <div class="label">{{ k.label }}</div>
+      <div class="value">{{ k.value }}</div>
+      <div class="hint">{{ k.hint }}</div>
+    </div>
+  {% endfor %}
+</div>
+{{ block.super }}
+{% endblock %}

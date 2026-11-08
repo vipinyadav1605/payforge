@@ -48,3 +48,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker build -t payforge-api ./api
+      - run: docker build -t payforge-backoffice ./backoffice

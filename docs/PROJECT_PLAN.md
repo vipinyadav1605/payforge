@@ -195,7 +195,8 @@ flowchart TB
   M --> ING
   D --> ING
   C --> ING
-  A --> PG
+  A -.read-only SQL.-> PG
+  A -->|admin actions via API + admin token| GW
   ING --> GW
   GW --> PAY
   GW --> RD
@@ -233,6 +234,7 @@ ownership). That migration story is itself an interview topic.
 | Risk | rules, decisions, velocity counters | allow/review/block | Redis, Payments |
 | Reconciliation | settlement files, mismatches | compare PSP report vs ledger, raise breaks | PSP, Ledger, object storage |
 | Payout | payout batches | move merchant balance out (ledger transaction) | Ledger, PSP |
+| Back-office (Django) | its own auth tables (separate DB schema), staff users and groups | staff console: KPIs, search merchants/payments/ledger, webhook failures; **read-only SQL, writes only through the admin API** | Postgres (read), Payments API (admin endpoints) |
 
 Rule: **a service never reads another service's tables.** It uses an API or consumes events. This is what makes services
 independently deployable.
@@ -552,11 +554,45 @@ Estimates assume 8-10 hours a week. Do not skip the "prove it" column; the evide
 ### Phase 13 - Product surface: dashboard, checkout, SDK, back-office (runs in parallel from Phase 2)
 - **Build:** merchant dashboard (payments, refunds, payouts, API keys with test/live mode, webhook logs + replay, analytics
   charts, team members); **hosted checkout page** and a small **JS SDK** that tokenizes without touching your servers;
-  **Django back-office** (admin for support/ops: merchants, disputes, reconciliation breaks, webhook failures) reading via
+  **Django back-office** (see "Back-office design" below; first version built in Phase 13a) reading via
   API or a read replica; accessibility and responsive design; E2E tests (Playwright).
 - **Concepts:** API-first design, CORS, CSP, session vs token auth for dashboards, SDK ergonomics, admin tooling safety
   (audit every staff action).
 - **Prove it:** a 2-minute demo video: signup, integrate, pay, refund, replay a failed webhook.
+
+#### Back-office design (Django admin service, `backoffice/`)
+
+```mermaid
+flowchart LR
+  STAFF[Support / ops staff] -->|login, RBAC groups| BO[Django back-office :8001]
+  BO -->|read-only SQL, unmanaged models| PG[(Postgres: public schema)]
+  BO -->|own tables: users, sessions, admin log| BS[(Postgres: backoffice schema)]
+  BO -->|admin actions: suspend merchant, replay webhook| API[Payments API /admin/*]
+  API --> PG
+```
+
+- **Why Django here and FastAPI for the core:** Django's admin gives a staff console (search, filters, pagination, auth,
+  permissions, audit log) in a few hundred lines, while the payment hot path stays in FastAPI where you control every query
+  and lock. Using both is a real-world pattern and shows you can pick tools by job.
+- **Rule 1: read-only against money tables.** Models are `managed = False` mirrors of the API's tables, and every admin
+  class forbids add/change/delete. Nobody edits a ledger or a payment by hand in a database UI.
+- **Rule 2: writes go through the API.** Actions (suspend/activate a merchant, replay a dead webhook) call
+  `PATCH /admin/merchants/{id}` and `POST /admin/webhook-deliveries/{id}/replay` with the admin token, so validation and
+  business rules live in one place.
+- **Rule 3: never expose secrets.** The mirrored models deliberately omit `api_keys.key_hash` and
+  `webhook_endpoints.secret`.
+- **Own schema for Django's tables:** `search_path=backoffice,public` keeps Django's auth/session tables apart from the
+  tables Alembic owns, so the two migration systems can never collide.
+- **Ops dashboard (home page):** payments and volume in the last 24h, success rate, platform fee revenue, merchants (and
+  suspended), dead and retrying webhook deliveries, unprocessed outbox events, and a live **ledger balanced** check (debits
+  equal credits).
+- **RBAC:** superuser can run actions; other staff groups (for example `support`, `viewer`) are view-only by default.
+- **Later versions:** 13b disputes and evidence review, reconciliation breaks queue (Phase 8), payout approval with
+  four-eyes (two-person) rule, staff audit log shipped to MongoDB (Phase 7), SSO and mandatory 2FA, IP allow-list, and a
+  read-replica connection (Phase 4) so staff queries never load the primary.
+- **Prove it:** an end-to-end script: staff suspends a merchant, the merchant's API key returns 403, staff reactivates it;
+  staff replays a dead webhook and it is delivered; every page loads against real data (`manage.py check_pages`).
+- **Interview:** "Why didn't the admin write to the database directly?" "How do you give support staff safe access?"
 
 ---
 
@@ -702,7 +738,7 @@ system-design reading per week.
 | 1 Core API | done | payments, refunds, auth, pagination |
 | 2 Payments depth | in progress | idempotency, ledger, outbox, webhooks done; two-phase PSP, payouts, disputes, rotation pending |
 | 3-12 | not started | |
-| 13 Product surface | started | React dashboard exists (payments, new payment, webhooks) |
+| 13 Product surface | started | React merchant dashboard (payments, new payment, webhooks); **Django back-office v1** (KPIs, search, webhook replay, merchant suspend) |
 
 **Next 5 actions:**
 1. Write ADR-001 "Money as integers" and ADR-002 "Idempotency inside the business transaction".

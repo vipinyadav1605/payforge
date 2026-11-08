@@ -81,6 +81,11 @@ class MerchantCreate(BaseModel):
     email: str = Field(min_length=3, max_length=320)
 
 
+class MerchantStatusUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    status: Literal["active", "suspended"]
+
+
 class WebhookEndpointCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     url: str = Field(min_length=8, max_length=2000)

@@ -36,6 +36,7 @@ moved without a ledger entry, or an event announced for a payment that rolled ba
 | `FOR UPDATE SKIP LOCKED` queue claims | many workers, no double-processing, no blocking | a crashed worker's rows come back after the 120s lease |
 | Token bucket in Redis Lua, **fail-open** | atomic across replicas; Redis outage must not stop payments | brief unlimited window during an outage |
 | Row lock (`FOR UPDATE`) on capture/refund/cancel | two concurrent refunds can't exceed the captured amount | per-payment serialization |
+| Django back-office reads the DB, **writes only via the API** | one writer means one place for rules, validation and audit; staff can't corrupt the ledger | an extra HTTP hop for staff actions; the API needs `/admin/*` endpoints |
 
 ## Known simplifications (be ready to discuss these in interviews)
 

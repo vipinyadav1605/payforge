@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: payforge
       POSTGRES_DB: payforge
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -68,6 +68,25 @@ services:
       - /app/node_modules   # keep the container's installed packages, don't overwrite with the host folder
     depends_on:
       - api
+
+  backoffice:
+    build: ./backoffice
+    env_file: .env
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_DB: payforge
+      POSTGRES_USER: payforge
+      POSTGRES_PASSWORD: payforge
+      PAYFORGE_API_URL: http://api:8000
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./backoffice:/app   # dev only: live code reload
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_started
 
 volumes:
   pgdata:

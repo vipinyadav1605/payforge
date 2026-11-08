@@ -38,6 +38,15 @@ it has payments, a "send twice with the same Idempotency-Key" demo, refunds and 
 live delivery status) and the interactive API docs at <http://localhost:8000/docs>. `.\dev.ps1` lists every command
 (`logs`, `psql`, `cov`, `lint`, `migrate`, `revision "msg"`, `reset`).
 
+## Staff back-office (Django)
+
+Open <http://localhost:8001> and sign in with `BACKOFFICE_ADMIN_USER` / `BACKOFFICE_ADMIN_PASSWORD` from `.env`
+(default `admin` / `admin-change-me`, development only). The home page shows live ops KPIs (24h payments, success rate,
+fee revenue, **ledger balanced** check, dead/retrying webhooks). Browse merchants, payments (with refunds), ledger
+transactions (with their debit/credit entries) and webhook deliveries (with every attempt). All money tables are
+**read-only**; the actions "Suspend/Re-activate merchants" and "Replay webhook deliveries" call the API's `/admin/*`
+endpoints. Smoke-test every page against real data: `docker compose run --rm backoffice python manage.py check_pages`.
+
 ## Using the API
 
 ```powershell
@@ -75,6 +84,7 @@ arrive. Run it with `$env:FAIL=1` to watch retries and backoff.
 payforge/
   docker-compose.yml     db + redis + api + worker + web
   web/                   React (Vite) merchant dashboard; /api/* is proxied to the API
+  backoffice/            Django staff console (ops KPIs, search, webhook replay, merchant suspend)
   dev.ps1                shortcuts (up, test, migrate, ...)
   api/
     app/                 main.py, models.py, ledger.py, idempotency.py, outbox.py,
