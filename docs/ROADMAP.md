@@ -1,5 +1,8 @@
 # Roadmap and learning plan
 
+> The full, detailed plan (architecture diagrams, all 13 phases, quality gates, timeline) is in
+> [PROJECT_PLAN.md](PROJECT_PLAN.md). This file is the short checklist version.
+
 Each phase ends with something shippable, a measurement, and a short entry in
 [LEARNING_LOG.md](LEARNING_LOG.md). Tick boxes as you go.
 

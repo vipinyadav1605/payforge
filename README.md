@@ -81,7 +81,7 @@ payforge/
                          ratelimit.py, worker.py, services/, routers/
     migrations/          Alembic (includes the ledger safety triggers)
     tests/               pytest against a real Postgres + Redis
-  docs/                  ARCHITECTURE.md, ROADMAP.md, LEARNING_LOG.md
+  docs/                  PROJECT_PLAN.md (master plan), ARCHITECTURE.md, ROADMAP.md, LEARNING_LOG.md
   scripts/               demo.py, webhook_receiver.py
 ```
 
