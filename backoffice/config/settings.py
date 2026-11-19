@@ -7,7 +7,7 @@ models, so Django migrations can never touch them (Alembic owns them).
 
 import os
 from pathlib import Path
-
+#  checking this in the terminal for the first time git add git stash  git commit git restore etc.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-insecure-key-change-me")
